@@ -8,12 +8,12 @@ void flash_dispaly(int checkerboard[15][15],int t_col, int t_row,int player){
     int n = 15;
     char icon[] = {' ', 'o', 'x'};
 
-    printf("   - - - - - - - - - - - - - - - v0.1.1\n");
+    printf("   - - - - - - - - - - - - - - -  v0.2.22\n");
     for(int col=0; col<n; col++){
         printf("%s[ ",(col==t_col)?">":" ");
         for(int row=0; row<n; row++){
             if(col == t_col && row == t_row){
-                printf("%c ",(checkerboard[col][row] == -1)? '+':'#');
+                printf("%c ",(checkerboard[col][row] == -1)? '^':'#');
             }
             else{
                 printf("%c ", icon[checkerboard[col][row]+1]);
@@ -24,10 +24,20 @@ void flash_dispaly(int checkerboard[15][15],int t_col, int t_row,int player){
             printf("  -------------------");
         }
         else if(col == 1){
-            printf("  |    %s    |",(player==0)? "your turn":" computer ");
+            printf("  |    %s    |",(player==0)? "your turn":" computer");
+        }else if(col == 4 || col == 6){
+            printf("  -------------------");
+        }else if(col == 5){
+            if(t_col == -1){
+                printf((player)? "  |  PC thinking... |":"  |   use W A S D   |");
+            }else if(checkerboard[t_col][t_row] != -1){
+                printf("  |   invalid move  |");
+            }else{
+                printf("  | Selected (%c,%2d) |",((char)(t_row+65)),t_col+1);
+            }
         }
         printf("\n");
-    }
+    } 
     printf("   - - - - - - - - - - - - - - -\n  ");
     for(int row=0; row<n; row++){
         printf("%s",(row==t_row)? " ^":"  ");
@@ -143,28 +153,30 @@ int main() {
 
     int t_col = 7;
     int t_row = 7;
+    flash_dispaly(checkerboard, -1, -1, player);
 
     while(1){
 
-        flash_dispaly(checkerboard, t_col, t_row, player);
         char c = _getch();
 
         if (c == '\r' || c == '\n') {
+
+            if (checkerboard[t_col][t_row] != -1) {
+                continue;
+            }
             checkerboard[t_col][t_row] = player? 1:0;
+            player = player? 0:1;
             flash_dispaly(checkerboard, -1, -1, player);
             int code = cheak_winner(checkerboard, t_col, t_row);
-            if (player==0) {
-                player = 1;
-            }else{
-                player = 0;
-            }
             if (code == 0){
                 printf("You win!\n");
                 break;
             }else if(code == 1){
-                printf("Computer win!\n");
+                printf("gay win!\n");
                 break;
             }
+            continue;
+
         }else if(c == 'w' && t_col > 0){
             t_col--;
         }
@@ -177,7 +189,7 @@ int main() {
         else if(c == 'd' && t_row < n-1){
             t_row++;
         }
-
+        flash_dispaly(checkerboard, t_col, t_row, player);
     }
 
     system("pause");
