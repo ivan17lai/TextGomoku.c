@@ -1,19 +1,21 @@
 #include<stdio.h>
 #include<stdlib.h>
 
-void flash_dispaly(int checkerboard[15][15],int t_col, int t_row,int player){
+char versionCode[15] = "v0.3.14";
+
+void flash_dispaly(int checkerboard[15][15],int t_col, int t_row,int player,int score){
 
     system("cls");
 
     int n = 15;
-    char icon[] = {' ', 'o', 'x'};
+    char icon[] = {' ', 'O', 'X'};
 
-    printf("   - - - - - - - - - - - - - - -  v0.2.22\n");
+    printf("   - - - - - - - - - - - - - - -  %s\n",versionCode);
     for(int col=0; col<n; col++){
         printf("%s[ ",(col==t_col)?">":" ");
         for(int row=0; row<n; row++){
             if(col == t_col && row == t_row){
-                printf("%c ",(checkerboard[col][row] == -1)? '^':'#');
+                printf("%c ",(checkerboard[col][row] == -1)? '+':'#');
             }
             else{
                 printf("%c ", icon[checkerboard[col][row]+1]);
@@ -35,6 +37,10 @@ void flash_dispaly(int checkerboard[15][15],int t_col, int t_row,int player){
             }else{
                 printf("  | Selected (%c,%2d) |",((char)(t_row+65)),t_col+1);
             }
+        }else if(col == 7 || col == 9){
+            printf("  -------------------");
+        }else if(col == 8){
+            printf("  |  %d  |",score);
         }
         printf("\n");
     } 
@@ -46,7 +52,7 @@ void flash_dispaly(int checkerboard[15][15],int t_col, int t_row,int player){
 
 }
 
-int cheak_winner(int checkerboard[15][15],int n_col, int n_row){
+int check_winner(int checkerboard[15][15],int n_col, int n_row){
 
     int n = 15;
     int player = checkerboard[n_col][n_row];
@@ -139,11 +145,84 @@ int cheak_winner(int checkerboard[15][15],int n_col, int n_row){
     return -1;
 }
 
+int get_move_score(int checkerboard[15][15], int target_x, int target_y, int player) {
+
+    int dx[4] = {0, 1, 1, -1};
+    int dy[4] = {1, 0, 1, 1};
+
+    int total_score = 0;
+
+    for (int dir = 0; dir < 4; dir++) {
+        int count = 1;
+
+        for (int step = 1; step < 5; step++) {
+            int nx = target_x + dx[dir] * step;
+            int ny = target_y + dy[dir] * step;
+
+            if (nx < 0 || ny < 0 || nx >= 15 || ny >= 15) break;
+            if (checkerboard[nx][ny] == player)
+                count++;
+            else
+                break;
+        }
+
+        for (int step = 1; step < 5; step++) {
+            int nx = target_x - dx[dir] * step;
+            int ny = target_y - dy[dir] * step;
+
+            if (nx < 0 || ny < 0 || nx >= 15 || ny >= 15) break;
+            if (checkerboard[nx][ny] == player)
+                count++;
+            else
+                break;
+        }
+
+        switch (count) {
+            case 5:  total_score += 100000; break;
+            case 4:  total_score += 10000; break;
+            case 3:  total_score += 1000; break;
+            case 2:  total_score += 100; break;
+            default: break;
+        }
+    }
+
+    return total_score;
+}
+
+void computer_move(int checkerboard[15][15], int player,int* out_x, int* out_y) {
+    int best_score = -1;
+    int best_move[2] = {-1, -1};
+
+    for (int i = 0; i < 15; i++) {
+        for (int j = 0; j < 15; j++) {
+            if (checkerboard[i][j] == -1) {
+                int score = get_move_score(checkerboard, i, j, player)+get_move_score(checkerboard, i, j, player? 0:1)*0.9;
+                if (score > best_score) {
+                    best_score = score;
+                    best_move[0] = i;
+                    best_move[1] = j;
+                }
+            }
+        }
+    }
+
+    *out_x = best_move[0];
+    *out_y = best_move[1];
+
+}
+
 int main() {
 
     int n = 15;
     int checkerboard[n][n];
     int player = 0;
+
+    int moveHistory[255][2];
+    int move_count = 0;
+    for (int i = 0; i < 255; i++) {
+        moveHistory[i][0] = -1;
+        moveHistory[i][1] = -1;
+    }
 
     for(int col=0; col<n; col++){
         for(int row=0; row<n; row++){
@@ -153,7 +232,7 @@ int main() {
 
     int t_col = 7;
     int t_row = 7;
-    flash_dispaly(checkerboard, -1, -1, player);
+    flash_dispaly(checkerboard, -1, -1, player,0);
 
     while(1){
 
@@ -165,16 +244,44 @@ int main() {
                 continue;
             }
             checkerboard[t_col][t_row] = player? 1:0;
-            player = player? 0:1;
-            flash_dispaly(checkerboard, -1, -1, player);
-            int code = cheak_winner(checkerboard, t_col, t_row);
+            player = 1;
+            flash_dispaly(checkerboard, -1, -1, player,get_move_score(checkerboard, t_col, t_row, player)+get_move_score(checkerboard, t_col, t_row, player? 0:1)*0.9);
+            moveHistory[move_count][0] = t_col;
+            moveHistory[move_count][1] = t_row;
+            move_count++;
+
+            int code = check_winner(checkerboard, t_col, t_row);
             if (code == 0){
                 printf("You win!\n");
                 break;
             }else if(code == 1){
-                printf("gay win!\n");
+                printf("computer win!\n");
                 break;
             }
+
+            if(player == 1){
+                int cpt_x, cpt_y;
+                computer_move(checkerboard, player, &cpt_x, &cpt_y);
+                t_col = cpt_x;
+                t_row = cpt_y;
+                checkerboard[t_col][t_row] = player;
+                flash_dispaly(checkerboard, -1, -1, player,get_move_score(checkerboard, t_col, t_row, player)+get_move_score(checkerboard, t_col, t_row, player? 0:1)*0.9);
+                moveHistory[move_count][0] = t_col;
+                moveHistory[move_count][1] = t_row;
+                move_count++;
+            }
+
+            code = check_winner(checkerboard, t_col, t_row);
+            if (code == 0){
+                printf("You win!\n");
+                break;
+            }else if(code == 1){
+                printf("computer win!\n");
+                break;
+            }
+
+            player = 0;
+
             continue;
 
         }else if(c == 'w' && t_col > 0){
@@ -189,7 +296,7 @@ int main() {
         else if(c == 'd' && t_row < n-1){
             t_row++;
         }
-        flash_dispaly(checkerboard, t_col, t_row, player);
+        flash_dispaly(checkerboard, t_col, t_row, player,get_move_score(checkerboard, t_col, t_row, player));
     }
 
     system("pause");
