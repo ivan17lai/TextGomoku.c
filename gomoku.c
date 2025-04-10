@@ -1,11 +1,31 @@
 #include<stdio.h>
 #include<stdlib.h>
 
-char versionCode[15] = "v0.3.14";
+#include <termios.h>
+#include <unistd.h>
+#include <fcntl.h>
+
+char getch() {
+    struct termios oldt, newt;
+    char c;
+    tcgetattr(STDIN_FILENO, &oldt);           // 取得目前終端機設定
+    newt = oldt;
+    newt.c_lflag &= ~(ICANON | ECHO);         // 關閉緩衝與回顯
+    tcsetattr(STDIN_FILENO, TCSANOW, &newt);  // 設定新終端機模式
+    read(STDIN_FILENO, &c, 1);
+    tcsetattr(STDIN_FILENO, TCSANOW, &oldt);  // 還原終端機設定
+    return c;
+}
+
+char versionCode[15] = "v0.4.1";
 
 void flash_dispaly(int checkerboard[15][15],int t_col, int t_row,int player,int score){
 
-    system("cls");
+    #ifdef _WIN32
+        system("cls");
+    #else
+        system("clear");
+    #endif
 
     int n = 15;
     char icon[] = {' ', 'O', 'X'};
@@ -236,7 +256,7 @@ int main() {
 
     while(1){
 
-        char c = _getch();
+        char c = getch();
 
         if (c == '\r' || c == '\n') {
 

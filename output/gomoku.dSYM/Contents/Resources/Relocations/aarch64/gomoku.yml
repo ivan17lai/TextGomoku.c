@@ -1,0 +1,5 @@
+---
+triple:          'arm64-apple-darwin'
+binary-path:     '/Users/yihuan/Projects/TextGomoku.c/output/gomoku'
+relocations:     []
+...
