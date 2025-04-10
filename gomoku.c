@@ -20,8 +20,7 @@
     }
 #endif
 
-
-char versionCode[15] = "v0.4.2";
+char versionCode[15] = "v0.4.3";
 
 void flash_dispaly(int checkerboard[15][15],int t_col, int t_row,int player,int score){
 
@@ -34,7 +33,7 @@ void flash_dispaly(int checkerboard[15][15],int t_col, int t_row,int player,int 
     int n = 15;
     char icon[] = {' ', 'O', 'X'};
 
-    printf("   - - - - - - - - - - - - - - -  %s\n",versionCode);
+    printf("   - - - - - - - - - - - - - - -    %s\n",versionCode);
     for(int col=0; col<n; col++){
         printf("%s[ ",(col==t_col)?">":" ");
         for(int row=0; row<n; row++){
