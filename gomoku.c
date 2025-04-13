@@ -3,14 +3,19 @@
 
 #ifdef _WIN32
     #include <conio.h>
+    #include <windows.h>
+    void delay(int seconds) {
+        Sleep(seconds * 1000);
+    }
 #else
     #include <termios.h>
     #include <unistd.h>
     #include <fcntl.h>
+
     char getch() {
         struct termios oldt, newt;
         char c;
-        tcgetattr(STDIN_FILENO, &oldt);           // 取得目前終端機設定
+        tcgetattr(STDIN_FILENO, &oldt);  // 獲取當前終端機設定
         newt = oldt;
         newt.c_lflag &= ~(ICANON | ECHO);         // 關閉緩衝與回顯
         tcsetattr(STDIN_FILENO, TCSANOW, &newt);  // 設定新終端機模式
@@ -18,10 +23,15 @@
         tcsetattr(STDIN_FILENO, TCSANOW, &oldt);  // 還原終端機設定
         return c;
     }
+
+    void delay(int seconds) {
+        sleep(seconds);
+    }
+
 #endif
 
 
-char versionCode[15] = "v0.4.2";
+char versionCode[15] = "v0.5.4";
 
 void flash_dispaly(int checkerboard[15][15],int t_col, int t_row,int player,int score){
 
@@ -32,7 +42,7 @@ void flash_dispaly(int checkerboard[15][15],int t_col, int t_row,int player,int 
     #endif
 
     int n = 15;
-    char icon[] = {' ', 'O', 'X'};
+    char icon[] = {'.', 'O', 'X'};
 
     printf("   - - - - - - - - - - - - - - -  %s\n",versionCode);
     for(int col=0; col<n; col++){
@@ -175,37 +185,64 @@ int get_move_score(int checkerboard[15][15], int target_x, int target_y, int pla
     int dy[4] = {1, 0, 1, 1};
 
     int total_score = 0;
+    
 
-    for (int dir = 0; dir < 4; dir++) {
+    for (int i = 0; i < 4; i++) {
         int count = 1;
+        int life = 0;
 
         for (int step = 1; step < 5; step++) {
-            int nx = target_x + dx[dir] * step;
-            int ny = target_y + dy[dir] * step;
+            int nx = target_x + dx[i] * step;
+            int ny = target_y + dy[i] * step;
 
-            if (nx < 0 || ny < 0 || nx >= 15 || ny >= 15) break;
-            if (checkerboard[nx][ny] == player)
-                count++;
-            else
+            if (nx < 0 || ny < 0 || nx >= 15 || ny >= 15){
+                life++;
                 break;
+            }
+            if (checkerboard[nx][ny] == player){
+                count++;
+            }else{
+                if (checkerboard[nx][ny] != -1){
+                    life++;
+                }
+                break;
+            }
         }
 
         for (int step = 1; step < 5; step++) {
-            int nx = target_x - dx[dir] * step;
-            int ny = target_y - dy[dir] * step;
+            int nx = target_x - dx[i] * step;
+            int ny = target_y - dy[i] * step;
 
-            if (nx < 0 || ny < 0 || nx >= 15 || ny >= 15) break;
-            if (checkerboard[nx][ny] == player)
-                count++;
-            else
+            if (nx < 0 || ny < 0 || nx >= 15 || ny >= 15){
+                life++;
                 break;
+            }
+            if (checkerboard[nx][ny] == player){
+                count++;
+            }else{
+                if (checkerboard[nx][ny] != -1){
+                    life++;
+                }
+                break;
+            }
         }
-
+        int k=200;
         switch (count) {
-            case 5:  total_score += 100000; break;
-            case 4:  total_score += 10000; break;
-            case 3:  total_score += 1000; break;
-            case 2:  total_score += 100; break;
+            case 5:
+                total_score += 100000; 
+                break;
+            case 4:  
+                if(life>1) break;
+                total_score += 10000-life*k; 
+                break;
+            case 3:
+                if(life>1) break;
+                total_score += 1000-life*k; 
+                break;
+            case 2:
+                if(life>1) break;
+                total_score += 100-life*k; 
+                break;
             default: break;
         }
     }
@@ -270,6 +307,7 @@ int main() {
             checkerboard[t_col][t_row] = player? 1:0;
             player = 1;
             flash_dispaly(checkerboard, -1, -1, player,get_move_score(checkerboard, t_col, t_row, player)+get_move_score(checkerboard, t_col, t_row, player? 0:1)*0.9);
+            delay(1);
             moveHistory[move_count][0] = t_col;
             moveHistory[move_count][1] = t_row;
             move_count++;
@@ -289,6 +327,7 @@ int main() {
                 t_col = cpt_x;
                 t_row = cpt_y;
                 checkerboard[t_col][t_row] = player;
+                player = 0;
                 flash_dispaly(checkerboard, -1, -1, player,get_move_score(checkerboard, t_col, t_row, player)+get_move_score(checkerboard, t_col, t_row, player? 0:1)*0.9);
                 moveHistory[move_count][0] = t_col;
                 moveHistory[move_count][1] = t_row;
@@ -304,7 +343,7 @@ int main() {
                 break;
             }
 
-            player = 0;
+            
 
             continue;
 
