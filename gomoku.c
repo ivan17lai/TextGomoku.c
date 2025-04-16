@@ -15,12 +15,12 @@
     char getch() {
         struct termios oldt, newt;
         char c;
-        tcgetattr(STDIN_FILENO, &oldt);  // 獲取當前終端機設定
+        tcgetattr(STDIN_FILENO, &oldt);
         newt = oldt;
-        newt.c_lflag &= ~(ICANON | ECHO);         // 關閉緩衝與回顯
-        tcsetattr(STDIN_FILENO, TCSANOW, &newt);  // 設定新終端機模式
+        newt.c_lflag &= ~(ICANON | ECHO);
+        tcsetattr(STDIN_FILENO, TCSANOW, &newt);
         read(STDIN_FILENO, &c, 1);
-        tcsetattr(STDIN_FILENO, TCSANOW, &oldt);  // 還原終端機設定
+        tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
         return c;
     }
 
@@ -44,9 +44,9 @@ void flash_dispaly(int checkerboard[15][15],int t_col, int t_row,int player,int 
     int n = 15;
     char icon[] = {'.', 'O', 'X'};
 
-    printf("   - - - - - - - - - - - - - - -  %s\n",versionCode);
+    printf("   - - - - - - - - - - - - - - -    %s\n",versionCode);
     for(int col=0; col<n; col++){
-        printf("%s[ ",(col==t_col)?">":" ");
+        printf("%s| ",(col==t_col)?">":" ");
         for(int row=0; row<n; row++){
             if(col == t_col && row == t_row){
                 printf("%c ",(checkerboard[col][row] == -1)? '+':'#');
@@ -55,7 +55,7 @@ void flash_dispaly(int checkerboard[15][15],int t_col, int t_row,int player,int 
                 printf("%c ", icon[checkerboard[col][row]+1]);
             }
         }
-        printf("]");
+        printf("|");
         if(col == 0 || col == 2){
             printf("  -------------------");
         }
@@ -314,10 +314,15 @@ int main() {
 
             int code = check_winner(checkerboard, t_col, t_row);
             if (code == 0){
-                printf("You win!\n");
+                printf(" -------------");
+                printf("|  You win!   |\n");
+                printf(" -------------");
                 break;
             }else if(code == 1){
-                printf("computer win!\n");
+                printf(" ---------------");
+                printf("| computer win! |\n");
+                printf(" ---------------");
+
                 break;
             }
 
