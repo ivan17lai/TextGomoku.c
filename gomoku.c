@@ -30,8 +30,8 @@
 
 #endif
 
-
-char versionCode[15] = "v0.5.4";
+int scoret = 0;
+char versionCode[15] = "v0.6.4";
 
 void flash_dispaly(int checkerboard[15][15],int t_col, int t_row,int player,int score){
 
@@ -82,7 +82,8 @@ void flash_dispaly(int checkerboard[15][15],int t_col, int t_row,int player,int 
     for(int row=0; row<n; row++){
         printf("%s",(row==t_row)? " ^":"  ");
     }
-    printf("\n\n");
+    printf("\n%d\n",scoret);
+
 
 }
 
@@ -186,6 +187,8 @@ int get_move_score(int checkerboard[15][15], int target_x, int target_y, int pla
 
     int total_score = 0;
     
+    int doubleLifeLink[] = {0,0,0,0};
+    int LifeLink[] = {0,0,0,0};
 
     for (int i = 0; i < 4; i++) {
         int count = 1;
@@ -233,18 +236,36 @@ int get_move_score(int checkerboard[15][15], int target_x, int target_y, int pla
                 break;
             case 4:  
                 if(life>1) break;
-                total_score += 10000-life*k; 
+                total_score += 10000/(life+1); 
+                switch (life){
+                    case 0: doubleLifeLink[3]++; break;
+                    case 1: LifeLink[3]++; break;
+                    default:break;
+                }
                 break;
             case 3:
                 if(life>1) break;
-                total_score += 1000-life*k; 
+                total_score += 1000/(life+1); 
+                switch (life){
+                    case 0: doubleLifeLink[2]++; break;
+                    case 1: LifeLink[2]++; break;
+                    default:break;
+                }
                 break;
             case 2:
                 if(life>1) break;
-                total_score += 100-life*k; 
+                total_score += 100/(life+1); 
                 break;
             default: break;
         }
+    }
+    if (doubleLifeLink[2]>=2){
+        total_score += 80000;
+    }else if (doubleLifeLink[2] == 1 && LifeLink[3] == 1){
+        total_score += 80000;
+    }
+    else if (LifeLink[3] >= 2){
+        total_score += 80000;
     }
 
     return total_score;
@@ -257,7 +278,7 @@ void computer_move(int checkerboard[15][15], int player,int* out_x, int* out_y) 
     for (int i = 0; i < 15; i++) {
         for (int j = 0; j < 15; j++) {
             if (checkerboard[i][j] == -1) {
-                int score = get_move_score(checkerboard, i, j, player)+get_move_score(checkerboard, i, j, player? 0:1)*0.9;
+                int score = get_move_score(checkerboard, i, j, player)+get_move_score(checkerboard, i, j, player? 0:1)*0.5;
                 if (score > best_score) {
                     best_score = score;
                     best_move[0] = i;
@@ -269,6 +290,8 @@ void computer_move(int checkerboard[15][15], int player,int* out_x, int* out_y) 
 
     *out_x = best_move[0];
     *out_y = best_move[1];
+
+    scoret = best_score;
 
 }
 
@@ -314,14 +337,14 @@ int main() {
 
             int code = check_winner(checkerboard, t_col, t_row);
             if (code == 0){
-                printf(" -------------");
+                printf(" -------------\n");
                 printf("|  You win!   |\n");
-                printf(" -------------");
+                printf(" -------------\n");
                 break;
             }else if(code == 1){
-                printf(" ---------------");
+                printf(" ---------------\n");
                 printf("| computer win! |\n");
-                printf(" ---------------");
+                printf(" ---------------\n");
 
                 break;
             }
