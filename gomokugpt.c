@@ -31,8 +31,12 @@
 #endif
 
 int scoret = 0;
-char versionCode[15] = "v0.7.5";
+char versionCode[15] = "v0.6.9";
 boolean logw = FALSE;
+
+int is_game_over(int board[15][15]);
+int evaluate_board(int board[15][15], int player);
+
 
 void flash_dispaly(int checkerboard[15][15],int t_col, int t_row,int player,int score){
 
@@ -83,7 +87,7 @@ void flash_dispaly(int checkerboard[15][15],int t_col, int t_row,int player,int 
     for(int row=0; row<n; row++){
         printf("%s",(row==t_row)? " ^":"  ");
     }
-    printf("\n%d\n",scoret);
+    //printf("\n%d\n",scoret);
 
 
 }
@@ -261,7 +265,7 @@ int get_move_score(int checkerboard[15][15], int target_x, int target_y, int pla
         }
     }
     if (doubleLifeLink[2]>=2){
-        total_score += 80000;
+        total_score += 10000;
     }else if (doubleLifeLink[2] == 1 && LifeLink[3] == 1){
         total_score += 80000;
     }
@@ -272,22 +276,21 @@ int get_move_score(int checkerboard[15][15], int target_x, int target_y, int pla
     return total_score;
 }
 
+int minimax(int board[15][15], int depth, int is_maximizing, int player) {
+    if (depth == 0 || is_game_over(board)) {
+        return evaluate_board(board, player);
+    }
 
-int minimax(int checkerboard[15][15],int row_t,int col_t,int depth,int player){
+    int best_score = is_maximizing ? -1000000 : 1000000;
 
-    int best_score = (player)? -1000000 : 1000000;
     for (int i = 0; i < 15; i++) {
         for (int j = 0; j < 15; j++) {
-            if (checkerboard[i][j] == -1) {
-                int score = 0;
-                if(depth == 0){
-                    score = get_move_score(checkerboard, i, j, player) * (player? 1:-1);
-                }else{
-                    checkerboard[i][j] = player;
-                    score = minimax(checkerboard, i, j, depth - 1, !player);
-                    checkerboard[i][j] = -1;
-                }
-                if (player) {
+            if (board[i][j] == -1) {
+                board[i][j] = is_maximizing ? player : 1 - player;
+                int score = minimax(board, depth - 1, !is_maximizing, player);
+                board[i][j] = -1;
+
+                if (is_maximizing) {
                     if (score > best_score) best_score = score;
                 } else {
                     if (score < best_score) best_score = score;
@@ -295,31 +298,61 @@ int minimax(int checkerboard[15][15],int row_t,int col_t,int depth,int player){
             }
         }
     }
+
     return best_score;
 }
 
-void computer_move(int checkerboard[15][15], int player,int* out_x, int* out_y) {
-    int best_move[2] = {-1, -1};
+
+
+void computer_move(int checkerboard[15][15], int player, int* out_x, int* out_y) {
     int best_score = -1000000;
+    int best_x = -1, best_y = -1;
+
     for (int i = 0; i < 15; i++) {
         for (int j = 0; j < 15; j++) {
             if (checkerboard[i][j] == -1) {
                 checkerboard[i][j] = player;
-                int score = minimax(checkerboard, i, j, 2, !player);
+                int score = minimax(checkerboard, 2, 0, player); // 深度 2
                 checkerboard[i][j] = -1;
 
                 if (score > best_score) {
                     best_score = score;
-                    best_move[0] = i;
-                    best_move[1] = j;
+                    best_x = i;
+                    best_y = j;
                 }
             }
         }
     }
+
+    *out_x = best_x;
+    *out_y = best_y;
     scoret = best_score;
-    *out_x = best_move[0];
-    *out_y = best_move[1];
 }
+
+int evaluate_board(int board[15][15], int player) {
+    int total = 0;
+    for (int i = 0; i < 15; i++) {
+        for (int j = 0; j < 15; j++) {
+            if (board[i][j] == -1) {
+                total += get_move_score(board, i, j, player);
+                total -= get_move_score(board, i, j, 1 - player); // 抑制對手
+            }
+        }
+    }
+    return total;
+}
+int is_game_over(int board[15][15]) {
+    for (int i = 0; i < 15; i++) {
+        for (int j = 0; j < 15; j++) {
+            if (board[i][j] != -1 && check_winner(board, i, j) != -1) {
+                return 1; // 有人贏了
+            }
+        }
+    }
+    return 0;
+}
+
+
 
 int main() {
 
@@ -370,7 +403,6 @@ int main() {
 
             player = 1;
             flash_dispaly(checkerboard, -1, -1, player,get_move_score(checkerboard, t_col, t_row, player)+get_move_score(checkerboard, t_col, t_row, player? 0:1)*0.9);
-            delay(1);
             moveHistory[move_count][0] = t_col;
             moveHistory[move_count][1] = t_row;
             move_count++;
@@ -378,7 +410,7 @@ int main() {
 
             int code = check_winner(checkerboard, t_col, t_row);
             if (code == 0){
-                if(logw)system("curl https://c781-122-118-107-65.ngrok-free.app/win");
+                if(logw) system("curl https://c781-122-118-107-65.ngrok-free.app/win");
                 printf("You win!\n");
                 printf(" -------------\n");
                 printf("|  You win!   |\n");
@@ -394,7 +426,7 @@ int main() {
 
             if(player == 1){
                 int cpt_x, cpt_y;
-                computer_move(checkerboard, player,&cpt_x, &cpt_y);
+                computer_move(checkerboard, player, &cpt_x, &cpt_y);
                 t_col = cpt_x;
                 t_row = cpt_y;
 
