@@ -31,7 +31,7 @@
 #endif
 
 int scoret = 0;
-char versionCode[15] = "v0.7.5";
+char versionCode[15] = "v0.7.6";
 boolean logw = FALSE;
 
 void flash_dispaly(int checkerboard[15][15],int t_col, int t_row,int player,int score){
@@ -273,7 +273,7 @@ int get_move_score(int checkerboard[15][15], int target_x, int target_y, int pla
 }
 
 
-int minimax(int checkerboard[15][15],int row_t,int col_t,int depth,int player){
+int minimax(int checkerboard[15][15],int col_t,int row_t,int depth,int player){
 
     int best_score = (player)? -1000000 : 1000000;
     for (int i = 0; i < 15; i++) {
@@ -290,7 +290,7 @@ int minimax(int checkerboard[15][15],int row_t,int col_t,int depth,int player){
                 if (player) {
                     if (score > best_score) best_score = score;
                 } else {
-                    if (score < best_score) best_score = score;
+                    if (score < best_score) best_score = score*1.2;
                 }
             }
         }
