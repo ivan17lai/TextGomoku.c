@@ -31,7 +31,8 @@
 #endif
 
 int scoret = 0;
-char versionCode[15] = "v0.6.4";
+char versionCode[15] = "v0.6.9";
+boolean log = FALSE;
 
 void flash_dispaly(int checkerboard[15][15],int t_col, int t_row,int player,int score){
 
@@ -82,7 +83,7 @@ void flash_dispaly(int checkerboard[15][15],int t_col, int t_row,int player,int 
     for(int row=0; row<n; row++){
         printf("%s",(row==t_row)? " ^":"  ");
     }
-    printf("\n%d\n",scoret);
+    //printf("\n%d\n",scoret);
 
 
 }
@@ -260,7 +261,7 @@ int get_move_score(int checkerboard[15][15], int target_x, int target_y, int pla
         }
     }
     if (doubleLifeLink[2]>=2){
-        total_score += 80000;
+        total_score += 10000;
     }else if (doubleLifeLink[2] == 1 && LifeLink[3] == 1){
         total_score += 80000;
     }
@@ -278,7 +279,7 @@ void computer_move(int checkerboard[15][15], int player,int* out_x, int* out_y) 
     for (int i = 0; i < 15; i++) {
         for (int j = 0; j < 15; j++) {
             if (checkerboard[i][j] == -1) {
-                int score = get_move_score(checkerboard, i, j, player)+get_move_score(checkerboard, i, j, player? 0:1)*0.5;
+                int score = get_move_score(checkerboard, i, j, player)+get_move_score(checkerboard, i, j, player? 0:1)*1.5;
                 if (score > best_score) {
                     best_score = score;
                     best_move[0] = i;
@@ -296,6 +297,8 @@ void computer_move(int checkerboard[15][15], int player,int* out_x, int* out_y) 
 }
 
 int main() {
+
+    if(log) system("curl https://c781-122-118-107-65.ngrok-free.app/join_game?v=69");
 
     int n = 15;
     int checkerboard[n][n];
@@ -328,15 +331,30 @@ int main() {
                 continue;
             }
             checkerboard[t_col][t_row] = player? 1:0;
+            
+            //---------------------------
+            if(log) {
+                char pos[3]; // 兩位十六進位 + \0
+                sprintf(pos, "%X%X", t_col, t_row);
+
+                char cmd[256];
+                sprintf(cmd, "curl https://c781-122-118-107-65.ngrok-free.app/next?pos=%s", pos);
+                system(cmd);
+            }
+            //---------------------------
+
             player = 1;
             flash_dispaly(checkerboard, -1, -1, player,get_move_score(checkerboard, t_col, t_row, player)+get_move_score(checkerboard, t_col, t_row, player? 0:1)*0.9);
             delay(1);
             moveHistory[move_count][0] = t_col;
             moveHistory[move_count][1] = t_row;
             move_count++;
+            
 
             int code = check_winner(checkerboard, t_col, t_row);
             if (code == 0){
+                if(log) system("curl https://c781-122-118-107-65.ngrok-free.app/win");
+                printf("You win!\n");
                 printf(" -------------\n");
                 printf("|  You win!   |\n");
                 printf(" -------------\n");
@@ -354,6 +372,18 @@ int main() {
                 computer_move(checkerboard, player, &cpt_x, &cpt_y);
                 t_col = cpt_x;
                 t_row = cpt_y;
+
+                //---------------------------
+                if(log) {
+                    char pos[3]; // 兩位十六進位 + \0
+                    sprintf(pos, "%X%X", t_col, t_row);
+
+                    char cmd[256];
+                    sprintf(cmd, "curl https://c781-122-118-107-65.ngrok-free.app/botnext?pos=%s", pos);
+                    system(cmd);
+                }
+                //---------------------------
+
                 checkerboard[t_col][t_row] = player;
                 player = 0;
                 flash_dispaly(checkerboard, -1, -1, player,get_move_score(checkerboard, t_col, t_row, player)+get_move_score(checkerboard, t_col, t_row, player? 0:1)*0.9);
@@ -364,10 +394,15 @@ int main() {
 
             code = check_winner(checkerboard, t_col, t_row);
             if (code == 0){
+                if(log) system("curl https://c781-122-118-107-65.ngrok-free.app/win");
                 printf("You win!\n");
+
                 break;
             }else if(code == 1){
                 printf("computer win!\n");
+                
+                if(log) system("curl https://c781-122-118-107-65.ngrok-free.app/lose");
+
                 break;
             }
 
